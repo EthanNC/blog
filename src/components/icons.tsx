@@ -21,6 +21,7 @@ import {
   SunMedium,
   Trash,
   Twitter,
+  Linkedin,
   User,
   X,
   type Icon as LucideIcon,
@@ -68,5 +69,6 @@ export const Icons = {
     </svg>
   ),
   twitter: Twitter,
+  linkedin: Linkedin,
   check: Check,
 };
