@@ -7,6 +7,7 @@ import { env } from "~/env.mjs";
 import { Metadata } from "next";
 import { Mdx } from "~/components/mdx-component";
 import "~/app/md.css";
+import NotFound from "./not-found";
 
 const url = env.NEXT_PUBLIC_APP_URL;
 
@@ -19,7 +20,9 @@ export const generateMetadata = ({
   params: { slug: string };
 }): Metadata => {
   const post = allPosts.find((post) => post._raw.flattenedPath === params.slug);
-  if (!post) throw new Error(`Post not found for slug: ${params.slug}`);
+  if (!post) {
+    return {};
+  }
   const ogUrl = new URL(`${url}/api/og`);
   ogUrl.searchParams.set("heading", post.title);
   ogUrl.searchParams.set("type", "Blog Post");
@@ -54,7 +57,7 @@ export const generateMetadata = ({
 
 const PostLayout = ({ params }: { params: { slug: string } }) => {
   const post = allPosts.find((post) => post._raw.flattenedPath === params.slug);
-  if (!post) throw new Error(`Post not found for slug: ${params.slug}`);
+  if (!post) return <NotFound />;
 
   return (
     <article className="prose prose-pre:bg-slate-200 mx-auto max-w-xl py-8">
@@ -95,10 +98,7 @@ const PostLayout = ({ params }: { params: { slug: string } }) => {
         </a>
       </div>
       <div>
-        <Link
-          href="/posts"
-          className="flex justify-center items-center space-x-2"
-        >
+        <Link href="/" className="flex justify-center items-center space-x-2">
           <Icons.chevronLeft className="w-5 h-5" />
           <span>Back to posts</span>
         </Link>

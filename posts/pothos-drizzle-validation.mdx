@@ -1,8 +1,8 @@
 ---
-title: GraphQL API Validation with Pothos and Drizzle
+title: Validation with Pothos and Drizzle
 description: Validate GraphQL requests from zod schemas using Pothos and Drizzle
 image: /images/drizzle.png
-date: 2021-10-10
+date: 2023-5-25
 ---
 
 <Image
@@ -25,20 +25,14 @@ Lets define a user table like so
 ```typescript
 const users = pgTable(
   "users",
-
   {
     id: uuid("id"),
-
     email: varchar("email", { length: 255 }).notNull(),
-
     name: text("name"),
-
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
-
   (user) => ({
     id: primaryKey(user.id),
-
     email: uniqueIndex("email").on(user.email),
   })
 );
@@ -51,18 +45,15 @@ import { createSelectSchema } from "drizzle-zod";
 
 const UserSchema = createSelectSchema(users, {
   id: (schema) => schema.id.uuid({ message: "Not a valid id" }),
-
   email: (schema) => schema.email.email({ message: "that not an email" }),
-
   name: (schema) => schema.name.optional(),
-
   createdAt: (schema) => schema.createdAt,
 });
 
 type User = z.infer<typeof UserSchema>;
 ```
 
-We can infer the type using `zod{:js}` and use it when building out our GraphQL API with Pothos.
+We can infer the type using `zod` and use it when building out our GraphQL API with Pothos.
 
 ## GraphQL Setup
 
@@ -81,14 +72,11 @@ We create our GraphQL `schema` using Pothos, which uses [SchemaBuilder](https://
 ```typescript
 export const builder = new SchemaBuilder({
   plugins: [ValidationPlugin],
-
   validationOptions: {
     validationError: (zodError, _, __, info) => {
       const [{ message, path }] = zodError.issues;
-
       return new GraphQLError(message, {
         path: [...pathToArray(info.path), ...path],
-
         extensions: {
           code: "VALIDATION_ERROR",
         },
@@ -106,11 +94,8 @@ Next I want to add a query to our API and validate it, but before that I need to
 const UserType = builder.objectRef<User>("User").implement({
   fields: (t) => ({
     id: t.exposeID("id"),
-
     email: t.exposeString("email"),
-
     name: t.exposeString("name", { nullable: true }),
-
     createdAt: t.string({
       resolve: (user) => user.createdAt.toISOString(),
     }),
@@ -121,77 +106,41 @@ const UserType = builder.objectRef<User>("User").implement({
 Using the `User` type I inferred from `drizzle-zod`, we create a GraphQL Object that is 1:1 with our user table. Lastly we plug this object into our query builder.
 
 ```typescript
-
 builder.queryFields((t) => ({
+  user: t.field({
+    type: UserType,
+    args: {
+      id: t.arg.string({
+        required: false,
+        validate: {
+          schema: UserSchema.shape.id,
+        },
+      }),
+      email: t.arg.string({
+        required: false,
+        validate: {
+          schema: UserSchema.shape.email,
+        },
+      }),
+    },
+    validate: [
+      (args) => !!args.id || !!args.email,
+      { message: "Must provide user id or email address" },
+    ],
+    resolve: async (_, args) => {
+      const result = args.id
+        ? await fromID(args.id)
+        : args.email
+        ? await fromEmail(args.email)
+        : null;
 
-user: t.field({
+      if (!result) {
+        throw new Error("user not found");
+      }
 
-type: UserType,
-
-args: {
-
-id: t.arg.string({
-
-required: false,
-
-validate: {
-
-schema: UserSchema.shape.id,
-
-},
-
-}),
-
-email: t.arg.string({
-
-required: false,
-
-validate: {
-
-schema: UserSchema.shape.email,
-
-},
-
-}),
-
-},
-
-validate: [
-
-(args) => !!args.id || !!args.email,
-
-{ message: "Must provide user id or email address" },
-
-],
-
-resolve: async (_, args) => {
-
-const result = args.id
-
-? await fromID(args.id)
-
-: args.email
-
-? await fromEmail(args.email)
-
-: null;
-
-
-
-if (!result) {
-
-throw new Error("user not found");
-
-}
-
-
-
-return result;
-
-},
-
-}),
-
+      return result;
+    },
+  }),
 ```
 
 <sup>`fromEmail` and `fromID` are wrapper functions around drizzle. </sup>

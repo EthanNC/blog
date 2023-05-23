@@ -6,8 +6,6 @@ import { cn } from "~/lib/utils";
 import { Callout } from "~/components/callout";
 import { MdxCard } from "~/components/mdx-card";
 import { Post } from "contentlayer/generated";
-import { Link } from "lucide-react";
-import { format, parseISO } from "date-fns";
 
 const components = {
   h1: ({ className, ...props }: { className: string }) => (
