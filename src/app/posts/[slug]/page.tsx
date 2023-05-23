@@ -5,6 +5,7 @@ import { Icons } from "~/components/icons";
 import Link from "next/link";
 import { env } from "~/env.mjs";
 import { Metadata } from "next";
+import { Mdx } from "~/components/mdx-component";
 import "~/app/md.css";
 
 const url = env.NEXT_PUBLIC_APP_URL;
@@ -27,13 +28,10 @@ export const generateMetadata = ({
   return {
     metadataBase: new URL(url),
     title: post.title,
-    // description: post.description,
-    // authors: post.authors.map((author) => ({
-    //   name: author,
-    // })),
+    description: post.description,
     openGraph: {
       title: post.title,
-      // description: post.description,
+      description: post.description,
       type: "article",
       url: absoluteUrl(post._raw.flattenedPath),
       images: [
@@ -48,7 +46,7 @@ export const generateMetadata = ({
     twitter: {
       card: "summary_large_image",
       title: post.title,
-      // description: post.description,
+      description: post.description,
       images: [ogUrl.toString()],
     },
   };
@@ -66,10 +64,9 @@ const PostLayout = ({ params }: { params: { slug: string } }) => {
         </time>
         <h1 className="text-3xl font-bold">{post.title}</h1>
       </div>
-      <div
-        className="[&>*]:mb-3 [&>*:last-child]:mb-0"
-        dangerouslySetInnerHTML={{ __html: post.body.html }}
-      />
+      <div className="[&>*]:mb-3 [&>*:last-child]:mb-0">
+        <Mdx code={post.body.code} post={post} />
+      </div>
       <hr className="my-8" />
       <div className="flex justify-center py-2 lg:py-10 space-x-5">
         <a

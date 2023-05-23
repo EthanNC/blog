@@ -1,7 +1,16 @@
 ---
 title: GraphQL API Validation with Pothos and Drizzle
+description: Validate GraphQL requests from zod schemas using Pothos and Drizzle
+image: /images/drizzle.png
 date: 2021-10-10
 ---
+
+<Image
+  alt="drizzle logo"
+  src={`/images/drizzle.png`}
+  width={400}
+  height={400}
+/>
 
 [Pothos](https://github.com/hayes/pothos) is a code-first approach to writing GraphQL schemas. It has an extensive plugin library that makes it my tool of choice when building a complex GraphQL API.
 
@@ -189,7 +198,12 @@ return result;
 
 This is where we realize the validation potential. The `user` query can take an email or id and will handle outputting input errors gracefully using the `UserSchema`.
 
-![graphiQL](../../../public/graphiql.png)
+<Image
+  alt="graphiql"
+  src={`/images/graphiql.png`}
+  width={1501 / 2}
+  height={712 / 2}
+/>
 
 The error message is extracted from the `drizzle-zod` schema and is returned to the client. We now have a GraphQL API that is validated on both the GraphQL and SQL layers.
 
