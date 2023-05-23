@@ -17,6 +17,18 @@ module.exports = {
       },
     },
     extend: {
+      typography: (theme) => ({
+        DEFAULT: {
+          css: {
+            "code::before": {
+              content: "none",
+            },
+            "code::after": {
+              content: "none",
+            },
+          },
+        },
+      }),
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -76,5 +88,5 @@ module.exports = {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [require("tailwindcss-animate"), require("@tailwindcss/typography")],
 };

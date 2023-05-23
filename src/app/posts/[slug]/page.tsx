@@ -5,6 +5,7 @@ import { Icons } from "~/components/icons";
 import Link from "next/link";
 import { env } from "~/env.mjs";
 import { Metadata } from "next";
+import "~/app/md.css";
 
 const url = env.NEXT_PUBLIC_APP_URL;
 
@@ -58,7 +59,7 @@ const PostLayout = ({ params }: { params: { slug: string } }) => {
   if (!post) throw new Error(`Post not found for slug: ${params.slug}`);
 
   return (
-    <article className="mx-auto max-w-xl py-8">
+    <article className="prose prose-pre:bg-slate-200 mx-auto max-w-xl py-8">
       <div className="mb-8 text-center">
         <time dateTime={post.date} className="mb-1 text-xs text-gray-600">
           {format(parseISO(post.date), "LLLL d, yyyy")}

@@ -1,0 +1,200 @@
+---
+title: GraphQL API Validation with Pothos and Drizzle
+date: 2021-10-10
+---
+
+[Pothos](https://github.com/hayes/pothos) is a code-first approach to writing GraphQL schemas. It has an extensive plugin library that makes it my tool of choice when building a complex GraphQL API.
+
+[Drizzle](https://github.com/drizzle-team/drizzle-orm) is a new ORM for SQL databases that focuses solely on Typescript. It allows you to define your tables and select/insert data all with Typescript.
+
+Pothos and Drizzle both have plugins that use [zod](https://zod.dev/) to validate on their respective layers. I will show how to use the Pothos [validation plugin](https://pothos-graphql.dev/docs/plugins/validation) with [drizzle-zod](https://github.com/drizzle-team/drizzle-orm/blob/main/drizzle-zod/README.md).
+
+## Drizzle Setup
+
+Lets define a user table like so
+
+```typescript
+const users = pgTable(
+  "users",
+
+  {
+    id: uuid("id"),
+
+    email: varchar("email", { length: 255 }).notNull(),
+
+    name: text("name"),
+
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+
+  (user) => ({
+    id: primaryKey(user.id),
+
+    email: uniqueIndex("email").on(user.email),
+  })
+);
+```
+
+We can use the `drizzle-zod` package to create a more granular schema based on our table.
+
+```typescript
+import { createSelectSchema } from "drizzle-zod";
+
+const UserSchema = createSelectSchema(users, {
+  id: (schema) => schema.id.uuid({ message: "Not a valid id" }),
+
+  email: (schema) => schema.email.email({ message: "that not an email" }),
+
+  name: (schema) => schema.name.optional(),
+
+  createdAt: (schema) => schema.createdAt,
+});
+
+type User = z.infer<typeof UserSchema>;
+```
+
+We can infer the type using `zod{:js}` and use it when building out our GraphQL API with Pothos.
+
+## GraphQL Setup
+
+I am using `graphql-yoga` to setup a Node server.
+
+```typescript
+const yoga = createYoga({
+  schema: builder.toSchema(),
+});
+
+const server = createServer(yoga);
+```
+
+We create our GraphQL `schema` using Pothos, which uses [SchemaBuilder](https://pothos-graphql.dev/docs/guide/schema-builder) to create the queries and mutations for our API.
+
+```typescript
+export const builder = new SchemaBuilder({
+  plugins: [ValidationPlugin],
+
+  validationOptions: {
+    validationError: (zodError, _, __, info) => {
+      const [{ message, path }] = zodError.issues;
+
+      return new GraphQLError(message, {
+        path: [...pathToArray(info.path), ...path],
+
+        extensions: {
+          code: "VALIDATION_ERROR",
+        },
+      });
+    },
+  },
+});
+```
+
+Above I have added `@pothos/plugin-validation` to our builder and configured it to extract errors from the `drizzle-zod` schema we defined above.
+
+Next I want to add a query to our API and validate it, but before that I need to define a GraphQL Object using Pothos.
+
+```typescript
+const UserType = builder.objectRef<User>("User").implement({
+  fields: (t) => ({
+    id: t.exposeID("id"),
+
+    email: t.exposeString("email"),
+
+    name: t.exposeString("name", { nullable: true }),
+
+    createdAt: t.string({
+      resolve: (user) => user.createdAt.toISOString(),
+    }),
+  }),
+});
+```
+
+Using the `User` type I inferred from `drizzle-zod`, we create a GraphQL Object that is 1:1 with our user table. Lastly we plug this object into our query builder.
+
+```typescript
+
+builder.queryFields((t) => ({
+
+user: t.field({
+
+type: UserType,
+
+args: {
+
+id: t.arg.string({
+
+required: false,
+
+validate: {
+
+schema: UserSchema.shape.id,
+
+},
+
+}),
+
+email: t.arg.string({
+
+required: false,
+
+validate: {
+
+schema: UserSchema.shape.email,
+
+},
+
+}),
+
+},
+
+validate: [
+
+(args) => !!args.id || !!args.email,
+
+{ message: "Must provide user id or email address" },
+
+],
+
+resolve: async (_, args) => {
+
+const result = args.id
+
+? await fromID(args.id)
+
+: args.email
+
+? await fromEmail(args.email)
+
+: null;
+
+
+
+if (!result) {
+
+throw new Error("user not found");
+
+}
+
+
+
+return result;
+
+},
+
+}),
+
+```
+
+<sup>`fromEmail` and `fromID` are wrapper functions around drizzle. </sup>
+
+This is where we realize the validation potential. The `user` query can take an email or id and will handle outputting input errors gracefully using the `UserSchema`.
+
+![graphiQL](../../../public/graphiql.png)
+
+The error message is extracted from the `drizzle-zod` schema and is returned to the client. We now have a GraphQL API that is validated on both the GraphQL and SQL layers.
+
+If you are interested in trying out this example, you can find the code [here](https://github.com/EthanNC/try-drizzle).
+
+## Conclusion
+
+Pothos and Drizzle are a great combination for building a GraphQL API. Their plugins allow validation on both the GraphQL and SQL layers. This is a powerful combination that allows you to build a complex API with confidence using Typescript.
