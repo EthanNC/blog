@@ -1,21 +1,22 @@
 import Image from "next/image";
 import Link from "next/link";
-// import { allPosts } from "contentlayer/generated"
+import { allPosts } from "contentlayer/generated";
 import { compareDesc } from "date-fns";
 
 import { formatDate } from "~/lib/utils";
-import { Button } from "~/components/ui/button";
 
 export const metadata = {
   title: "Blog",
 };
 
 export default async function BlogPage() {
-  //   const posts = allPosts
-  //     .filter((post) => post.published)
-  //     .sort((a, b) => {
-  //       return compareDesc(new Date(a.date), new Date(b.date))
-  //     })
+  const posts = allPosts
+    .filter((post) => post.date)
+    .sort((a, b) => {
+      return compareDesc(new Date(a.date), new Date(b.date));
+    });
+
+  console.log(posts);
 
   return (
     <div className="container max-w-4xl py-6 lg:py-10">
@@ -30,17 +31,17 @@ export default async function BlogPage() {
         </div>
       </div>
       <hr className="my-8" />
-      <Button asChild>
+      {/* <Button asChild>
         <Link href="/test">Test</Link>
-      </Button>
-      {/* {posts?.length ? (
+      </Button> */}
+      {posts?.length ? (
         <div className="grid gap-10 sm:grid-cols-2">
           {posts.map((post, index) => (
             <article
               key={post._id}
               className="group relative flex flex-col space-y-2"
             >
-              {post.image && (
+              {/* {post.image && (
                 <Image
                   src={post.image}
                   alt={post.title}
@@ -53,13 +54,14 @@ export default async function BlogPage() {
               <h2 className="text-2xl font-extrabold">{post.title}</h2>
               {post.description && (
                 <p className="text-muted-foreground">{post.description}</p>
-              )}
+              )} */}
+              <h2 className="text-2xl font-extrabold">{post.title}</h2>
               {post.date && (
                 <p className="text-sm text-muted-foreground">
                   {formatDate(post.date)}
                 </p>
               )}
-              <Link href={post.slug} className="absolute inset-0">
+              <Link href={post.url} className="absolute inset-0">
                 <span className="sr-only">View Article</span>
               </Link>
             </article>
@@ -67,7 +69,7 @@ export default async function BlogPage() {
         </div>
       ) : (
         <p>No posts published.</p>
-      )} */}
+      )}
     </div>
   );
 }
