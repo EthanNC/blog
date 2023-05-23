@@ -29,9 +29,6 @@ export default async function BlogPage() {
         </div>
       </div>
       <hr className="my-8" />
-      {/* <Button asChild>
-        <Link href="/test">Test</Link>
-      </Button> */}
       {posts?.length ? (
         <div className="grid gap-10 sm:grid-cols-2">
           {posts.map((post, index) => (
@@ -39,12 +36,12 @@ export default async function BlogPage() {
               key={post._id}
               className="group relative flex flex-col space-y-2"
             >
-              {/* {post.image && (
+              {post.image && (
                 <Image
                   src={post.image}
                   alt={post.title}
-                  width={804}
-                  height={452}
+                  width={200}
+                  height={200}
                   className="rounded-md border bg-muted transition-colors"
                   priority={index <= 1}
                 />
@@ -52,8 +49,7 @@ export default async function BlogPage() {
               <h2 className="text-2xl font-extrabold">{post.title}</h2>
               {post.description && (
                 <p className="text-muted-foreground">{post.description}</p>
-              )} */}
-              <h2 className="text-2xl font-extrabold">{post.title}</h2>
+              )}
               {post.date && (
                 <p className="text-sm text-muted-foreground">
                   {formatDate(post.date)}
