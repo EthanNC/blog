@@ -1,19 +1,56 @@
 import { format, parseISO } from "date-fns";
 import { allPosts } from "contentlayer/generated";
-import { cn } from "~/lib/utils";
+import { absoluteUrl, cn } from "~/lib/utils";
 import { Icons } from "~/components/icons";
 import Link from "next/link";
 import { env } from "~/env.mjs";
+import { Metadata } from "next";
 
 const url = env.NEXT_PUBLIC_APP_URL;
 
 export const generateStaticParams = async () =>
   allPosts.map((post) => ({ slug: post._raw.flattenedPath }));
 
-export const generateMetadata = ({ params }: { params: { slug: string } }) => {
+export const generateMetadata = ({
+  params,
+}: {
+  params: { slug: string };
+}): Metadata => {
   const post = allPosts.find((post) => post._raw.flattenedPath === params.slug);
   if (!post) throw new Error(`Post not found for slug: ${params.slug}`);
-  return { title: post.title };
+  const ogUrl = new URL(`${url}/api/og`);
+  ogUrl.searchParams.set("heading", post.title);
+  ogUrl.searchParams.set("type", "Blog Post");
+  ogUrl.searchParams.set("mode", "light");
+
+  return {
+    metadataBase: new URL(url),
+    title: post.title,
+    // description: post.description,
+    // authors: post.authors.map((author) => ({
+    //   name: author,
+    // })),
+    openGraph: {
+      title: post.title,
+      // description: post.description,
+      type: "article",
+      url: absoluteUrl(post._raw.flattenedPath),
+      images: [
+        {
+          url: ogUrl.toString(),
+          width: 1200,
+          height: 630,
+          alt: post.title,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: post.title,
+      // description: post.description,
+      images: [ogUrl.toString()],
+    },
+  };
 };
 
 const PostLayout = ({ params }: { params: { slug: string } }) => {
