@@ -8,6 +8,7 @@ import { Metadata } from "next";
 import { Mdx } from "~/components/mdx-component";
 import "~/app/md.css";
 import NotFound from "./not-found";
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 
 const url = env.NEXT_PUBLIC_APP_URL;
 
@@ -60,7 +61,7 @@ const PostLayout = ({ params }: { params: { slug: string } }) => {
   if (!post) return <NotFound />;
 
   return (
-    <article className="prose prose-pre:bg-slate-200 mx-auto max-w-md xl:max-w-lg py-8">
+    <article className="container prose prose-pre:bg-slate-200 mx-auto py-4">
       <div className="mb-8 text-center">
         <time dateTime={post.date} className="mb-1 text-xs text-gray-600">
           {format(parseISO(post.date), "LLLL d, yyyy")}
@@ -69,6 +70,20 @@ const PostLayout = ({ params }: { params: { slug: string } }) => {
       </div>
       <div className="[&>*]:mb-3 [&>*:last-child]:mb-0">
         <Mdx code={post.body.code} post={post} />
+      </div>
+      <div className="flex justify-center -mt-10 mb-14">
+        <h5 className=" italic font-semibold mt-9 mr-2">Written by </h5>
+        <Avatar>
+          <AvatarImage src="https://github.com/ethannc.png" alt="@EthanNC" />
+          <AvatarFallback>ENC</AvatarFallback>
+          <a
+            href={"https://github.com/ethannc"}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <h4 className="mt-10 ml-2">EthanNC </h4>
+          </a>
+        </Avatar>
       </div>
       <hr className="my-8" />
       <div className="flex justify-center py-2 lg:py-10 space-x-5">
